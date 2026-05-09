@@ -1,0 +1,435 @@
+--// IMY - Weave Glide
+--// Made By LVS
+
+local UIS = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local Player = Players.LocalPlayer
+local PlayerGui = Player:WaitForChild("PlayerGui")
+
+------------------------------------------------
+-- SETTINGS
+------------------------------------------------
+local GlideEnabled = false
+local DASH_POWER = 3.0
+local MODIFIER_KEY = Enum.KeyCode.Space
+
+------------------------------------------------
+-- CHARACTER HELPERS
+------------------------------------------------
+local function getChar()
+	return Player.Character or Player.CharacterAdded:Wait()
+end
+
+local function getHRP()
+	return getChar():WaitForChild("HumanoidRootPart")
+end
+
+------------------------------------------------
+-- GLIDE LOGIC
+------------------------------------------------
+local function applyDash(directionVector)
+	local hrp = getHRP()
+
+	if not hrp or not GlideEnabled then
+		return
+	end
+
+	-- tuned scaling
+	local scaledPower = DASH_POWER * 3.35
+
+	hrp.AssemblyLinearVelocity =
+		hrp.AssemblyLinearVelocity + (directionVector * scaledPower)
+end
+
+local function getDirectionFromKeys()
+	local camera = workspace.CurrentCamera
+
+	if not camera then
+		return nil
+	end
+
+	local look = Vector3.new(
+		camera.CFrame.LookVector.X,
+		0,
+		camera.CFrame.LookVector.Z
+	).Unit
+
+	local right = Vector3.new(
+		camera.CFrame.RightVector.X,
+		0,
+		camera.CFrame.RightVector.Z
+	).Unit
+
+	local finalDir = Vector3.zero
+
+	if UIS:IsKeyDown(Enum.KeyCode.W) then
+		finalDir += look
+	end
+
+	if UIS:IsKeyDown(Enum.KeyCode.S) then
+		finalDir -= look
+	end
+
+	if UIS:IsKeyDown(Enum.KeyCode.A) then
+		finalDir -= right
+	end
+
+	if UIS:IsKeyDown(Enum.KeyCode.D) then
+		finalDir += right
+	end
+
+	if finalDir.Magnitude > 0 then
+		return finalDir.Unit
+	end
+
+	return nil
+end
+
+------------------------------------------------
+-- INPUTS
+------------------------------------------------
+UIS.InputBegan:Connect(function(input, gpe)
+	if gpe or not GlideEnabled then
+		return
+	end
+
+	local camera = workspace.CurrentCamera
+
+	if not camera then
+		return
+	end
+
+	local look = Vector3.new(
+		camera.CFrame.LookVector.X,
+		0,
+		camera.CFrame.LookVector.Z
+	).Unit
+
+	local right = Vector3.new(
+		camera.CFrame.RightVector.X,
+		0,
+		camera.CFrame.RightVector.Z
+	).Unit
+
+	if UIS:IsKeyDown(MODIFIER_KEY) then
+		if input.KeyCode == Enum.KeyCode.W then
+			applyDash(look)
+
+		elseif input.KeyCode == Enum.KeyCode.S then
+			applyDash(-look)
+
+		elseif input.KeyCode == Enum.KeyCode.A then
+			applyDash(-right)
+
+		elseif input.KeyCode == Enum.KeyCode.D then
+			applyDash(right)
+		end
+	end
+
+	if input.KeyCode == MODIFIER_KEY then
+		local dir = getDirectionFromKeys()
+
+		if dir then
+			applyDash(dir)
+		end
+	end
+end)
+
+------------------------------------------------
+-- GUI
+------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "IMY_GLIDE_GUI"
+ScreenGui.Parent = PlayerGui
+ScreenGui.ResetOnSpawn = false
+
+------------------------------------------------
+-- MAIN
+------------------------------------------------
+local Main = Instance.new("Frame")
+Main.Size = UDim2.new(0, 270, 0, 175)
+Main.Position = UDim2.new(0.5, -135, 0.5, -87)
+Main.BackgroundColor3 = Color3.fromRGB(0,0,0)
+Main.BorderSizePixel = 0
+Main.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0,10)
+MainCorner.Parent = Main
+
+local MainStroke = Instance.new("UIStroke")
+MainStroke.Color = Color3.fromRGB(145,0,255)
+MainStroke.Thickness = 1.5
+MainStroke.Parent = Main
+
+------------------------------------------------
+-- TITLE
+------------------------------------------------
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1,0,0,38)
+Title.BackgroundTransparency = 1
+Title.Text = "imy"
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 22
+Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Parent = Main
+
+------------------------------------------------
+-- TOGGLE
+------------------------------------------------
+local ToggleFrame = Instance.new("Frame")
+ToggleFrame.Size = UDim2.new(1,-20,0,42)
+ToggleFrame.Position = UDim2.new(0,10,0,40)
+ToggleFrame.BackgroundColor3 = Color3.fromRGB(14,14,14)
+ToggleFrame.BorderSizePixel = 0
+ToggleFrame.Parent = Main
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0,8)
+ToggleCorner.Parent = ToggleFrame
+
+local ToggleStroke = Instance.new("UIStroke")
+ToggleStroke.Color = Color3.fromRGB(40,40,40)
+ToggleStroke.Parent = ToggleFrame
+
+local ToggleText = Instance.new("TextLabel")
+ToggleText.Size = UDim2.new(0.7,0,1,0)
+ToggleText.Position = UDim2.new(0,12,0,0)
+ToggleText.BackgroundTransparency = 1
+ToggleText.Text = "Weave Glide"
+ToggleText.Font = Enum.Font.Gotham
+ToggleText.TextSize = 14
+ToggleText.TextColor3 = Color3.fromRGB(220,220,220)
+ToggleText.TextXAlignment = Enum.TextXAlignment.Left
+ToggleText.Parent = ToggleFrame
+
+local Indicator = Instance.new("Frame")
+Indicator.Size = UDim2.new(0,32,0,16)
+Indicator.Position = UDim2.new(1,-45,0.5,-8)
+Indicator.BackgroundColor3 = Color3.fromRGB(45,45,45)
+Indicator.BorderSizePixel = 0
+Indicator.Parent = ToggleFrame
+
+local IndicatorCorner = Instance.new("UICorner")
+IndicatorCorner.CornerRadius = UDim.new(1,0)
+IndicatorCorner.Parent = Indicator
+
+ToggleFrame.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		GlideEnabled = not GlideEnabled
+
+		Indicator.BackgroundColor3 =
+			GlideEnabled
+			and Color3.fromRGB(145,0,255)
+			or Color3.fromRGB(45,45,45)
+	end
+end)
+
+------------------------------------------------
+-- SLIDER CONTAINER
+------------------------------------------------
+local SliderFrame = Instance.new("Frame")
+SliderFrame.Size = UDim2.new(1,-20,0,62)
+SliderFrame.Position = UDim2.new(0,10,0,92)
+SliderFrame.BackgroundColor3 = Color3.fromRGB(14,14,14)
+SliderFrame.BorderSizePixel = 0
+SliderFrame.Parent = Main
+
+local SliderCorner = Instance.new("UICorner")
+SliderCorner.CornerRadius = UDim.new(0,8)
+SliderCorner.Parent = SliderFrame
+
+local SliderStroke = Instance.new("UIStroke")
+SliderStroke.Color = Color3.fromRGB(40,40,40)
+SliderStroke.Parent = SliderFrame
+
+------------------------------------------------
+-- POWER TEXT
+------------------------------------------------
+local SliderLabel = Instance.new("TextLabel")
+SliderLabel.Size = UDim2.new(0.65,0,0,20)
+SliderLabel.Position = UDim2.new(0,12,0,6)
+SliderLabel.BackgroundTransparency = 1
+SliderLabel.Text = "Glide Power: 3.0"
+SliderLabel.Font = Enum.Font.Gotham
+SliderLabel.TextSize = 13
+SliderLabel.TextColor3 = Color3.fromRGB(220,220,220)
+SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.Parent = SliderFrame
+
+------------------------------------------------
+-- STATUS TEXT
+------------------------------------------------
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(0.35,-10,0,20)
+StatusLabel.Position = UDim2.new(0.65,0,0,6)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "LEGIT"
+StatusLabel.Font = Enum.Font.GothamBold
+StatusLabel.TextSize = 12
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Right
+StatusLabel.TextColor3 = Color3.fromRGB(0,255,120)
+StatusLabel.Parent = SliderFrame
+
+------------------------------------------------
+-- SLIDER BAR
+------------------------------------------------
+local SliderBack = Instance.new("Frame")
+SliderBack.Size = UDim2.new(1,-24,0,5)
+SliderBack.Position = UDim2.new(0,12,0,40)
+SliderBack.BackgroundColor3 = Color3.fromRGB(35,35,35)
+SliderBack.BorderSizePixel = 0
+SliderBack.Parent = SliderFrame
+
+local SliderBackCorner = Instance.new("UICorner")
+SliderBackCorner.CornerRadius = UDim.new(1,0)
+SliderBackCorner.Parent = SliderBack
+
+local SliderFill = Instance.new("Frame")
+SliderFill.Size = UDim2.new(0,0,1,0)
+SliderFill.BackgroundColor3 = Color3.fromRGB(145,0,255)
+SliderFill.BorderSizePixel = 0
+SliderFill.Parent = SliderBack
+
+local FillCorner = Instance.new("UICorner")
+FillCorner.CornerRadius = UDim.new(1,0)
+FillCorner.Parent = SliderFill
+
+local SliderKnob = Instance.new("TextButton")
+SliderKnob.Size = UDim2.new(0,14,0,14)
+SliderKnob.Position = UDim2.new(0,-7,0.5,-7)
+SliderKnob.BackgroundColor3 = Color3.fromRGB(145,0,255)
+SliderKnob.Text = ""
+SliderKnob.AutoButtonColor = false
+SliderKnob.Parent = SliderBack
+
+local KnobCorner = Instance.new("UICorner")
+KnobCorner.CornerRadius = UDim.new(1,0)
+KnobCorner.Parent = SliderKnob
+
+------------------------------------------------
+-- SLIDER LOGIC
+------------------------------------------------
+local draggingSlider = false
+
+SliderKnob.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSlider = true
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingSlider = false
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if draggingSlider then
+		local mouseX = UIS:GetMouseLocation().X
+
+		local barX = SliderBack.AbsolutePosition.X
+		local barSize = SliderBack.AbsoluteSize.X
+
+		local percent =
+			math.clamp((mouseX - barX) / barSize, 0, 1)
+
+		SliderKnob.Position =
+			UDim2.new(percent, -7, 0.5, -7)
+
+		SliderFill.Size =
+			UDim2.new(percent, 0, 1, 0)
+
+		local power = 3 + (percent * 17)
+
+		DASH_POWER =
+			tonumber(string.format("%.1f", power))
+
+		SliderLabel.Text =
+			"Glide Power: " .. tostring(DASH_POWER)
+
+		------------------------------------------------
+		-- STATUS INDICATOR
+		------------------------------------------------
+		if DASH_POWER >= 3 and DASH_POWER < 5 then
+			StatusLabel.Text = "LEGIT"
+			StatusLabel.TextColor3 =
+				Color3.fromRGB(0,255,120)
+
+		elseif DASH_POWER >= 5 and DASH_POWER < 7 then
+			StatusLabel.Text = "MODERATE"
+			StatusLabel.TextColor3 =
+				Color3.fromRGB(255,170,0)
+
+		else
+			StatusLabel.Text = "BLATANT"
+			StatusLabel.TextColor3 =
+				Color3.fromRGB(255,70,70)
+		end
+	end
+end)
+
+------------------------------------------------
+-- FOOTER
+------------------------------------------------
+local Footer = Instance.new("TextLabel")
+Footer.Size = UDim2.new(1,0,0,18)
+Footer.Position = UDim2.new(0,0,1,-18)
+Footer.BackgroundTransparency = 1
+Footer.Text = "made by lvs"
+Footer.Font = Enum.Font.Gotham
+Footer.TextSize = 11
+Footer.TextColor3 = Color3.fromRGB(120,120,120)
+Footer.Parent = Main
+
+------------------------------------------------
+-- DRAGGING
+------------------------------------------------
+local draggingUI = false
+local dragStart
+local startPos
+
+Title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingUI = true
+		dragStart = input.Position
+		startPos = Main.Position
+	end
+end)
+
+UIS.InputChanged:Connect(function(input)
+	if draggingUI
+	and input.UserInputType
+	== Enum.UserInputType.MouseMovement then
+
+		local delta = input.Position - dragStart
+
+		Main.Position = UDim2.new(
+			startPos.X.Scale,
+			startPos.X.Offset + delta.X,
+			startPos.Y.Scale,
+			startPos.Y.Offset + delta.Y
+		)
+	end
+end)
+
+UIS.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		draggingUI = false
+	end
+end)
+
+------------------------------------------------
+-- TOGGLE GUI WITH K
+------------------------------------------------
+UIS.InputBegan:Connect(function(input, gpe)
+	if gpe then
+		return
+	end
+
+	if input.KeyCode == Enum.KeyCode.K then
+		Main.Visible = not Main.Visible
+	end
+end)
